@@ -30,9 +30,45 @@ df = load_data()
 model, scaler = load_model()
 geojson = load_geojson()
 
-st.title("NHS Diagnostic Breach Risk Dashboard")
-st.markdown("Predicted breach risk for March 2026 based on December 2025 diagnostic data")
+st.markdown("<h3 style='text-align: center;'> NHS Diagnostic Breach Risk Dashboard </h3>", unsafe_allow_html=True)
+st.markdown("<h5 style='text-align: center;'> Predictions for March 2026 based on December 2025 Diagnostic Data </h5>", unsafe_allow_html=True)
+st.divider()
 
+
+st.markdown("<h5> Information about this Dashboard: </h5>", unsafe_allow_html=True)
+
+with st.expander("What is Breach Risk?", expanded=False):
+    st.markdown("""
+    **Breach Risk** refers to the predicted probability that a diagnostic provider will 
+    exceed **15.7%** of their waiting list in the 13+ week category within the next **3 months**.
+    
+    This threshold represents the **90th percentile** of provider performance during the 
+    training period (pre-2023), identifying providers in the top 10% of observed backlog pressure.
+    """)
+
+with st.expander("Methodology", expanded=False):
+    st.markdown("""
+    - **Data Source:** NHS England Diagnostic Waiting Times dataset (2018–2025)
+    - **Model and Performance:** XGBoost classifier trained on provider-level diagnostic activity: ROC-AUC 0.9428, Recall 0.81, Precision 0.52
+    - **Prediction horizon:** 3 months ahead
+    - **Training period:** 2018-2023data
+    - **Test period:** 2023 onwards
+    
+    The breach label was defined using the empirical P90 of the training period (15.7%), 
+    identifying providers whose 13-week waiting percentage places them in the top 10% 
+    of observed values.
+    """)
+
+with st.expander("Limitations", expanded=False):
+    st.markdown("""
+    - 6 ICBs are absent from the regional map as they appear only as commissioners 
+      in the source dataset, not providers.
+    - Predictions for December 2025 extrapolate slightly beyond the training period.
+    - Provider coordinates are derived from ODS postcode data. UPRN was not available for all provider codes, and as such precise building 
+      locations may differ slightly.
+    """)
+
+st.divider()
 
 ## choropleth map:
 ## jesus this took forever to figure out
@@ -68,10 +104,7 @@ missing_icbs = [
     for f in geojson['features']
     if f['properties']['ICB23CD'] not in icb_risk['icb_ons_code'].values 
 ]
-
 missing_df = pd.DataFrame(missing_icbs)
-
-
 icb_risk_full = pd.concat([icb_risk, missing_df], ignore_index = True)
 icb_risk_full['avg_breach_prob'] = icb_risk_full['avg_breach_prob'].fillna(-1)
 
@@ -95,8 +128,9 @@ fig = px.choropleth(
     labels={
         'avg_breach_prob': 'Avg Breach Probability'
     },
-    title = 'NHS ICB Diagnostic Breach Risk - March 2026'
+    title = 'Average Breach Risk Probability mapped by Integrated Care Boards'
 )
+
 
 fig.update_traces(
     hovertemplate = "<b>%{hovertext}</b><br>" +
@@ -105,40 +139,37 @@ fig.update_traces(
                   "Total Providers: %{customdata[2]:.0f}<br>"
 )
 fig.update_geos(fitbounds="locations", visible=False)
-fig.update_layout(height=700, margin={"r":0,"t":30,"l":0,"b":0}, title_x= 0.35)
+fig.update_layout(height=700, margin={"r":0,"t":30,"l":0,"b":0}, title_x= 0.25)
 
 
+## lay out of map 
 
-## by postcode
+st.markdown("<h5> Interactive Maps: </h5>", unsafe_allow_html=True)
 
+col1, col2, col3 = st.columns([2, 1, 2])
 
+with col1: 
+    map_view = st.radio(
+        "Select View",
+        ["Breach Risk by Provider Sites", "Regional Overview (ICB)"],
+        horizontal=True
+    )
 
-
-
-
-
-
-st.subheader("Maps:")
-
-map_view = st.radio(
-    "Select View",
-    ["Breach Risk by Provider Sites", "Regional Overview (ICB)"],
-    horizontal=True
-)
+map_df = df.copy()
 
 if map_view == "Breach Risk by Provider Sites":
-    col1, col2 = st.columns(2)
-    with col1:
-        show_high_risk = st.checkbox("Show High Risk Only", value = False)
     with col2:
+        st.markdown("<p style='font-size: 14px;'>Filter by risk level</p>", unsafe_allow_html=True)
+        show_high_risk = st.checkbox("Show High Risk Only", value = False)
+    with col3:
         top_n = st.slider("Top N Provides by Risk", min_value = 10, max_value = len(df), value = 208)
 
-    map_df = df.copy()
 
     if show_high_risk: 
         map_df = map_df[map_df['breach_risk_pred'] == 1]
         color_range = [map_df['breach_risk_prob'].min(), map_df['breach_risk_prob'].max()]
         color_scale = ['yellow', 'orange', 'red'] 
+
     else:
         color_range = [0,1]
         color_scale = ['green', 'yellow', 'red']
@@ -178,3 +209,11 @@ if map_view == "Breach Risk by Provider Sites":
 
 elif map_view == "Regional Overview (ICB)":
     st.plotly_chart(fig, use_container_width=True)
+
+st.divider()
+
+st.markdown("<h5> 2025 December Data Snapshot </h5>", unsafe_allow_html=True)
+
+
+
+
