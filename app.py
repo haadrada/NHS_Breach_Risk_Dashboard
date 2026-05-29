@@ -19,8 +19,6 @@ def load_geojson():
     response = requests.get(url)
     return response.json()
 
-@st.cache_resource
-
 df = load_data()
 geojson = load_geojson()
 
