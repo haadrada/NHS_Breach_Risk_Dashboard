@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import joblib
 import plotly.express as px
 import requests
 
@@ -71,7 +70,7 @@ with st.expander("Limitations", expanded=False):
 st.divider()
 
 ## choropleth map:
-## jesus this took forever to figure out
+## this took forever to figure out 
 
 ## Mapping chloropeth
 ## get ONS code matched with the name, add to icb_risk 
