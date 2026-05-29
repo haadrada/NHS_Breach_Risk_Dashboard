@@ -20,13 +20,8 @@ def load_geojson():
     return response.json()
 
 @st.cache_resource
-def load_model():
-    model = joblib.load('xgb_model.pkl')
-    scaler = joblib.load('scaler.pkl')
-    return model, scaler
 
 df = load_data()
-model, scaler = load_model()
 geojson = load_geojson()
 
 st.markdown("<h3 style='text-align: center;'> NHS Diagnostic Breach Risk Dashboard </h3>", unsafe_allow_html=True)
