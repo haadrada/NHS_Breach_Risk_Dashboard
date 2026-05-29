@@ -63,7 +63,6 @@ with st.expander("Limitations", expanded=False):
 st.divider()
 
 ## choropleth map:
-## this took forever to figure out 
 
 ## Mapping chloropeth
 ## get ONS code matched with the name, add to icb_risk 
